@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Estoque no Google Planilhas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #C9AE82;
+    --bg-noise: #BFA274;
+    --panel: #F6EFDD;
+    --panel-edge: #E7DCBE;
+    --ink: #23201A;
+    --ink-soft: #5B5245;
+    --rule: #B9A067;
+    --stamp-red: #A73B2E;
+    --stamp-green: #3D6B52;
+    --stamp-amber: #B87A22;
+    --focus: #23201A;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1E1A14;
+      --bg-noise: #241F17;
+      --panel: #2A251D;
+      --panel-edge: #38311F;
+      --ink: #EDE4D0;
+      --ink-soft: #C9BDA4;
+      --rule: #4A3F2E;
+      --stamp-red: #E4776A;
+      --stamp-green: #7EC0A0;
+      --stamp-amber: #E0A94A;
+      --focus: #EDE4D0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1E1A14;
+    --bg-noise: #241F17;
+    --panel: #2A251D;
+    --panel-edge: #38311F;
+    --ink: #EDE4D0;
+    --ink-soft: #C9BDA4;
+    --rule: #4A3F2E;
+    --stamp-red: #E4776A;
+    --stamp-green: #7EC0A0;
+    --stamp-amber: #E0A94A;
+    --focus: #EDE4D0;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(var(--bg-noise) 1px, transparent 1px);
+    background-size: 3px 3px;
+    color: var(--ink);
+    font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    min-height: 100vh;
+    padding: 28px 14px 60px;
+  }
+  h1, h2, h3, .stamp, .tag-label, .nav-btn, .confirm-btn {
+    font-family: 'Special Elite', 'Courier New', monospace;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .sheet {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .letterhead {
+    text-align: left;
+    padding: 4px 4px 18px;
+    border-bottom: 3px double var(--rule);
+    margin-bottom: 22px;
+  }
+  .letterhead .eyebrow {
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+  }
+  .letterhead h1 {
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 6px 0 8px;
+    font-weight: 400;
+  }
+  .letterhead p {
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 54ch;
+    margin: 0;
+  }
+
+  .progress {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 2px 2px 14px;
+    margin-bottom: 18px;
+  }
+  .progress-stub {
+    flex: 1 0 auto;
+    min-width: 58px;
+    text-align: center;
+    padding: 7px 4px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-family: 'Special Elite', 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    background: transparent;
+  }
+  .progress-stub.is-current {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--panel);
+  }
+  .progress-stub.is-done {
+    border-style: solid;
+    color: var(--stamp-green);
+    border-color: var(--stamp-green);
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    box-shadow: 3px 3px 0 var(--panel-edge);
+    padding: 26px 24px;
+    margin-bottom: 18px;
+  }
+  .tag-label {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    padding: 3px 9px;
+    margin-bottom: 14px;
+  }
+  .panel h2 {
+    font-size: 20px;
+    font-weight: 400;
+    margin: 0 0 14px;
+    line-height: 1.35;
+  }
+  .panel p { margin: 0 0 14px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel ol, .panel ul { margin: 0 0 14px; padding-left: 22px; }
+  .panel li { margin-bottom: 6px; }
+
+  code, .formula {
+    font-family: 'Special Elite', 'Courier New', monospace;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 1px 5px;
+    font-size: 0.92em;
+    border-radius: 2px;
+  }
+  .formula-block {
+    font-family: 'Special Elite', 'Courier New', monospace;
+    background: var(--bg);
+    border: 1px dashed var(--rule);
+    padding: 12px 14px;
+    margin: 14px 0;
+    font-size: 15px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .formula-parts {
+    margin: 10px 0 16px;
+    padding: 0;
+    list-style: none;
+  }
+  .formula-parts li {
+    margin-bottom: 8px;
+    padding-left: 14px;
+    border-left: 2px solid var(--rule);
+  }
+
+  .sheet-mock-wrap { overflow-x: auto; margin: 14px 0 18px; }
+  table.sheet-mock {
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 100%;
+    background: var(--panel);
+  }
+  table.sheet-mock caption {
+    text-align: left;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    font-family: 'Special Elite', 'Courier New', monospace;
+  }
+  table.sheet-mock th, table.sheet-mock td {
+    border: 1px solid var(--rule);
+    padding: 5px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  table.sheet-mock thead tr.colletters th {
+    background: var(--panel-edge);
+    color: var(--ink-soft);
+    font-weight: 500;
+    text-align: center;
+    font-size: 11px;
+  }
+  table.sheet-mock thead tr.headers th {
+    background: var(--stamp-amber);
+    color: var(--panel);
+    font-weight: 600;
+  }
+  table.sheet-mock tbody th {
+    background: var(--panel-edge);
+    color: var(--ink-soft);
+    text-align: center;
+    font-weight: 400;
+    font-size: 11px;
+  }
+  table.sheet-mock td.formula-cell {
+    font-family: 'Special Elite', 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--stamp-green);
+  }
+
+  .checkline {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--rule);
+  }
+  .checkline input[type="checkbox"] {
+    width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--ink);
+  }
+  .checkline label { font-size: 14.5px; color: var(--ink-soft); }
+
+  fieldset.quiz {
+    border: none;
+    margin: 18px 0 0;
+    padding: 16px 0 0;
+    border-top: 1px dashed var(--rule);
+    position: relative;
+  }
+  fieldset.quiz legend {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0;
+    margin-bottom: 10px;
+    float: left;
+    width: 100%;
+  }
+  .quiz-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 7px 8px;
+    margin-bottom: 4px;
+    font-size: 14.5px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .quiz-option:hover { border-color: var(--rule); }
+  .quiz-option input { margin-top: 3px; accent-color: var(--ink); }
+  .quiz-option.is-correct { border-color: var(--stamp-green); color: var(--stamp-green); }
+  .quiz-option.is-wrong { border-color: var(--stamp-red); color: var(--stamp-red); text-decoration: line-through; }
+  .quiz-msg { font-size: 13px; margin-top: 8px; display: none; }
+  .quiz-msg.show { display: block; }
+  .quiz-warn { color: var(--stamp-red); }
+  .confirm-btn {
+    margin-top: 10px;
+    background: var(--ink);
+    color: var(--panel);
+    border: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .confirm-btn:disabled { opacity: 0.4; cursor: default; }
+  .stamp {
+    position: absolute;
+    top: 10px;
+    right: 0;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    border: 2px solid;
+    padding: 3px 9px;
+    transform: rotate(-6deg);
+    display: none;
+  }
+  .stamp.stamp-ok { color: var(--stamp-green); border-color: var(--stamp-green); }
+  .stamp.stamp-bad { color: var(--stamp-red); border-color: var(--stamp-red); }
+
+  .id-grid { display: grid; gap: 14px; margin: 16px 0 6px; }
+  .id-field label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 5px; }
+  .id-field input, .id-field select {
+    width: 100%;
+    font-family: inherit;
+    font-size: 15px;
+    padding: 9px 10px;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .id-field input:focus, .id-field select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .id-field .field-hint { display: block; font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; min-height: 14px; }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .nav-btn {
+    font-size: 13px;
+    padding: 11px 18px;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .nav-btn.primary { background: var(--ink); color: var(--panel); }
+  .nav-btn:disabled { opacity: 0.35; cursor: default; }
+  .nav-spacer { flex: 1; }
+
+  .score-line {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  textarea.fallback {
+    width: 100%;
+    min-height: 140px;
+    font-family: 'Special Elite', 'Courier New', monospace;
+    font-size: 11px;
+    padding: 10px;
+    border: 1px dashed var(--rule);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .save-status { font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .save-status.ok { color: var(--stamp-green); }
+  .save-status.err { color: var(--stamp-red); }
+
+  [data-step] { display: none; }
+  [data-step].is-active { display: block; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="letterhead">
+    <div class="eyebrow">Informática Empresarial · roteiro de aula</div>
+    <h1>Controle de estoque no Google Planilhas</h1>
+    <p>Nesta aula você vai montar, do zero, uma planilha de estoque com duas abas e a função SOMASE, que calcula entradas, saídas e saldo automaticamente.</p>
+  </div>
+
+  <div class="progress" id="progress"></div>
+
+  <!-- STEP 0 -->
+  <section data-step="0">
+    <div class="panel">
+      <span class="tag-label">Identificação</span>
+      <h2>Antes de começar</h2>
+      <p>Preencha seus dados. Eles vão para o comprovante que você vai gerar no fim do roteiro, junto com sua planilha.</p>
+      <div class="id-grid">
+        <div class="id-field">
+          <label for="f-nome">Nome completo</label>
+          <input type="text" id="f-nome" autocomplete="off">
+          <span class="field-hint" id="hint-nome"></span>
+        </div>
+        <div class="id-field">
+          <label for="f-numero">Número de chamada</label>
+          <input type="text" id="f-numero" inputmode="numeric" autocomplete="off">
+          <span class="field-hint" id="hint-numero"></span>
+        </div>
+        <div class="id-field">
+          <label for="f-turma">Turma</label>
+          <select id="f-turma">
+            <option value="" disabled>Selecione a turma</option>
+            <option value="1º ADM - Sala A">1º ADM - Sala A</option>
+            <option value="1º ADM - Sala B">1º ADM - Sala B</option>
+            <option value="1º ADM - Sala C">1º ADM - Sala C</option>
+            <option value="1º ADM - Sala D">1º ADM - Sala D</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 1 -->
+  <section data-step="1">
+    <div class="panel">
+      <span class="tag-label">Etapa 1 de 6</span>
+      <h2>Criando as duas abas</h2>
+      <p>Abra uma planilha nova no Google Planilhas. Você vai trabalhar com duas abas: uma para o cadastro dos produtos e outra para registrar o que entra e sai todo dia.</p>
+      <ol>
+        <li>No rodapé da tela, clique duas vezes sobre o nome <strong>Planilha1</strong> e renomeie para <strong>Estoque</strong>.</li>
+        <li>Clique no sinal de <strong>+</strong>, ao lado do nome da aba, para criar uma segunda aba. Renomeie essa nova aba para <strong>Movimento</strong>.</li>
+      </ol>
+      <p>A aba Estoque vai guardar o cadastro: código, nome e quantidade de cada produto. A aba Movimento vai guardar cada entrada e saída, uma embaixo da outra, conforme forem acontecendo.</p>
+      <div class="checkline">
+        <input type="checkbox" id="chk-1">
+        <label for="chk-1">Já criei as duas abas (Estoque e Movimento) na minha planilha.</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section data-step="2">
+    <div class="panel">
+      <span class="tag-label">Etapa 2 de 6</span>
+      <h2>Montando a aba Estoque</h2>
+      <p>Na aba <strong>Estoque</strong>, digite os títulos na primeira linha:</p>
+      <ul>
+        <li><code>A1</code> — Código</li>
+        <li><code>B1</code> — Nome do Produto</li>
+        <li><code>C1</code> — Estoque Inicial</li>
+      </ul>
+      <p>A partir da linha 2, cadastre os produtos que você vai controlar, com um código curto para cada um. Veja um exemplo com 5 produtos — pode usar produtos diferentes, o importante é manter um código único para cada item:</p>
+      <div class="sheet-mock-wrap">
+        <table class="sheet-mock">
+          <caption>Aba Estoque</caption>
+          <thead>
+            <tr class="colletters"><th></th><th>A</th><th>B</th><th>C</th></tr>
+            <tr class="headers"><th>1</th><th>Código</th><th>Nome do Produto</th><th>Estoque Inicial</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>2</th><td>P001</td><td>Caderno Universitário</td><td>40</td></tr>
+            <tr><th>3</th><td>P002</td><td>Caneta Esferográfica</td><td>100</td></tr>
+            <tr><th>4</th><td>P003</td><td>Borracha</td><td>60</td></tr>
+            <tr><th>5</th><td>P004</td><td>Lápis Grafite</td><td>80</td></tr>
+            <tr><th>6</th><td>P005</td><td>Apontador</td><td>50</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="chk-2">
+        <label for="chk-2">Já cadastrei meus produtos na aba Estoque, com código, nome e estoque inicial.</label>
+      </div>
+      <fieldset class="quiz" id="q1" data-correct="2">
+        <legend>Confira o que aprendeu</legend>
+        <span class="stamp stamp-ok">confere</span>
+        <span class="stamp stamp-bad">revisar</span>
+        <div>Em qual célula fica o estoque inicial do primeiro produto cadastrado?</div>
+        <label class="quiz-option"><input type="radio" name="q1" value="0"> A2</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="1"> B1</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="2"> C2</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="3"> C1</label>
+        <button type="button" class="confirm-btn">Confirmar resposta</button>
+        <div class="quiz-msg"></div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section data-step="3">
+    <div class="panel">
+      <span class="tag-label">Etapa 3 de 6</span>
+      <h2>Montando a aba Movimento</h2>
+      <p>Vá para a aba <strong>Movimento</strong> e digite os títulos na primeira linha:</p>
+      <ul>
+        <li><code>A1</code> — Código</li>
+        <li><code>B1</code> — Entrada</li>
+        <li><code>C1</code> — Saída</li>
+      </ul>
+      <p>Cada linha representa um movimento: uma compra que chegou (entrada) ou uma venda que saiu (saída). Preencha só uma das duas colunas em cada linha, deixando a outra em branco:</p>
+      <div class="sheet-mock-wrap">
+        <table class="sheet-mock">
+          <caption>Aba Movimento</caption>
+          <thead>
+            <tr class="colletters"><th></th><th>A</th><th>B</th><th>C</th></tr>
+            <tr class="headers"><th>1</th><th>Código</th><th>Entrada</th><th>Saída</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>2</th><td>P001</td><td>10</td><td></td></tr>
+            <tr><th>3</th><td>P002</td><td></td><td>15</td></tr>
+            <tr><th>4</th><td>P001</td><td></td><td>5</td></tr>
+            <tr><th>5</th><td>P003</td><td>20</td><td></td></tr>
+            <tr><th>6</th><td>P004</td><td></td><td>30</td></tr>
+            <tr><th>7</th><td>P002</td><td>25</td><td></td></tr>
+            <tr><th>8</th><td>P005</td><td></td><td>10</td></tr>
+            <tr><th>9</th><td>P003</td><td></td><td>8</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Repare que o mesmo código aparece em várias linhas — é assim que registramos várias movimentações do mesmo produto ao longo do tempo.</p>
+      <div class="checkline">
+        <input type="checkbox" id="chk-3">
+        <label for="chk-3">Já registrei movimentações de entrada e saída na aba Movimento.</label>
+      </div>
+      <fieldset class="quiz" id="q2" data-correct="2">
+        <legend>Confira o que aprendeu</legend>
+        <span class="stamp stamp-ok">confere</span>
+        <span class="stamp stamp-bad">revisar</span>
+        <div>Um produto foi vendido. Em qual coluna você registra essa quantidade?</div>
+        <label class="quiz-option"><input type="radio" name="q2" value="0"> Código</label>
+        <label class="quiz-option"><input type="radio" name="q2" value="1"> Entrada</label>
+        <label class="quiz-option"><input type="radio" name="q2" value="2"> Saída</label>
+        <label class="quiz-option"><input type="radio" name="q2" value="3"> Estoque Inicial</label>
+        <button type="button" class="confirm-btn">Confirmar resposta</button>
+        <div class="quiz-msg"></div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section data-step="4">
+    <div class="panel">
+      <span class="tag-label">Etapa 4 de 6</span>
+      <h2>SOMASE: total de entradas</h2>
+      <p>Volte para a aba <strong>Estoque</strong>. Na célula <code>D1</code>, digite o título <strong>Entradas</strong>. Na célula <code>D2</code>, digite:</p>
+      <div class="formula-block">=SOMASE(Movimento!A:A;A2;Movimento!B:B)</div>
+      <p>Lendo por partes:</p>
+      <ul class="formula-parts">
+        <li><code>Movimento!A:A</code> — onde o Planilhas vai procurar o código: a coluna A inteira da aba Movimento.</li>
+        <li><code>A2</code> — o código que queremos buscar: o código do produto dessa linha, aqui na aba Estoque.</li>
+        <li><code>Movimento!B:B</code> — a coluna que será somada quando o código bater: a coluna Entrada.</li>
+      </ul>
+      <p>Depois de digitar em D2, arraste o cantinho da célula (a bolinha azul no canto inferior direito) para baixo, até a linha do último produto, para repetir a fórmula para todos.</p>
+      <div class="sheet-mock-wrap">
+        <table class="sheet-mock">
+          <caption>Aba Estoque</caption>
+          <thead>
+            <tr class="colletters"><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+            <tr class="headers"><th>1</th><th>Código</th><th>Nome</th><th>Est. Inicial</th><th>Entradas</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>2</th><td>P001</td><td>Caderno</td><td>40</td><td>10</td></tr>
+            <tr><th>3</th><td>P002</td><td>Caneta</td><td>100</td><td>25</td></tr>
+            <tr><th>4</th><td>P003</td><td>Borracha</td><td>60</td><td>20</td></tr>
+            <tr><th>5</th><td>P004</td><td>Lápis</td><td>80</td><td>0</td></tr>
+            <tr><th>6</th><td>P005</td><td>Apontador</td><td>50</td><td>0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="chk-4">
+        <label for="chk-4">Já criei a coluna Entradas com SOMASE e arrastei para todos os produtos.</label>
+      </div>
+      <fieldset class="quiz" id="q3" data-correct="1">
+        <legend>Confira o que aprendeu</legend>
+        <span class="stamp stamp-ok">confere</span>
+        <span class="stamp stamp-bad">revisar</span>
+        <div>Na fórmula =SOMASE(Movimento!A:A;A2;Movimento!B:B), o que exatamente está sendo somado?</div>
+        <label class="quiz-option"><input type="radio" name="q3" value="0"> Todos os códigos cadastrados na aba Movimento</label>
+        <label class="quiz-option"><input type="radio" name="q3" value="1"> As quantidades da coluna Entrada, só das linhas em que o código é igual ao de A2</label>
+        <label class="quiz-option"><input type="radio" name="q3" value="2"> O total de linhas preenchidas na aba Movimento</label>
+        <label class="quiz-option"><input type="radio" name="q3" value="3"> As quantidades da coluna Saída de todos os produtos</label>
+        <button type="button" class="confirm-btn">Confirmar resposta</button>
+        <div class="quiz-msg"></div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section data-step="5">
+    <div class="panel">
+      <span class="tag-label">Etapa 5 de 6</span>
+      <h2>SOMASE: total de saídas</h2>
+      <p>Na célula <code>E1</code>, digite o título <strong>Saídas</strong>. A lógica em <code>E2</code> é praticamente igual à fórmula anterior — só muda a coluna que está sendo somada:</p>
+      <div class="formula-block">=SOMASE(Movimento!A:A;A2;Movimento!C:C)</div>
+      <p>Repare que só a última parte mudou: agora aponta para a coluna C (Saída) da aba Movimento, em vez da coluna B (Entrada). Arraste para baixo até o último produto, do mesmo jeito que fez na coluna Entradas.</p>
+      <div class="sheet-mock-wrap">
+        <table class="sheet-mock">
+          <caption>Aba Estoque</caption>
+          <thead>
+            <tr class="colletters"><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr>
+            <tr class="headers"><th>1</th><th>Código</th><th>Nome</th><th>Est. Inicial</th><th>Entradas</th><th>Saídas</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>2</th><td>P001</td><td>Caderno</td><td>40</td><td>10</td><td>5</td></tr>
+            <tr><th>3</th><td>P002</td><td>Caneta</td><td>100</td><td>25</td><td>15</td></tr>
+            <tr><th>4</th><td>P003</td><td>Borracha</td><td>60</td><td>20</td><td>8</td></tr>
+            <tr><th>5</th><td>P004</td><td>Lápis</td><td>80</td><td>0</td><td>30</td></tr>
+            <tr><th>6</th><td>P005</td><td>Apontador</td><td>50</td><td>0</td><td>10</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="chk-5">
+        <label for="chk-5">Já criei a coluna Saídas com SOMASE e arrastei para todos os produtos.</label>
+      </div>
+      <fieldset class="quiz" id="q4" data-correct="1">
+        <legend>Confira o que aprendeu</legend>
+        <span class="stamp stamp-ok">confere</span>
+        <span class="stamp stamp-bad">revisar</span>
+        <div>Ao copiar a fórmula da coluna Entradas para calcular as Saídas, o que precisa mudar?</div>
+        <label class="quiz-option"><input type="radio" name="q4" value="0"> Nada, a fórmula fica exatamente igual</label>
+        <label class="quiz-option"><input type="radio" name="q4" value="1"> Apenas o intervalo de soma, que passa a apontar para a coluna Saída</label>
+        <label class="quiz-option"><input type="radio" name="q4" value="2"> O intervalo de critério, que passa a apontar para a coluna Nome do Produto</label>
+        <label class="quiz-option"><input type="radio" name="q4" value="3"> A célula do critério, que passa a ser B2</label>
+        <button type="button" class="confirm-btn">Confirmar resposta</button>
+        <div class="quiz-msg"></div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- STEP 6 -->
+  <section data-step="6">
+    <div class="panel">
+      <span class="tag-label">Etapa 6 de 6</span>
+      <h2>Saldo final</h2>
+      <p>Por fim, na célula <code>F1</code>, digite o título <strong>Saldo Final</strong>. Esse cálculo é mais simples: o estoque inicial, mais tudo que entrou, menos tudo que saiu. Na célula <code>F2</code>:</p>
+      <div class="formula-block">=C2+D2-E2</div>
+      <p>Arraste para baixo até o último produto. Pronto — sua planilha agora recalcula o saldo de cada produto sozinha, toda vez que você registrar uma movimentação nova na aba Movimento.</p>
+      <div class="sheet-mock-wrap">
+        <table class="sheet-mock">
+          <caption>Aba Estoque — completa</caption>
+          <thead>
+            <tr class="colletters"><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr>
+            <tr class="headers"><th>1</th><th>Código</th><th>Nome</th><th>Est. Inicial</th><th>Entradas</th><th>Saídas</th><th>Saldo Final</th></tr>
+          </thead>
+          <tbody>
+            <tr><th>2</th><td>P001</td><td>Caderno</td><td>40</td><td>10</td><td>5</td><td>45</td></tr>
+            <tr><th>3</th><td>P002</td><td>Caneta</td><td>100</td><td>25</td><td>15</td><td>110</td></tr>
+            <tr><th>4</th><td>P003</td><td>Borracha</td><td>60</td><td>20</td><td>8</td><td>72</td></tr>
+            <tr><th>5</th><td>P004</td><td>Lápis</td><td>80</td><td>0</td><td>30</td><td>50</td></tr>
+            <tr><th>6</th><td>P005</td><td>Apontador</td><td>50</td><td>0</td><td>10</td><td>40</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="chk-6">
+        <label for="chk-6">Já criei a coluna Saldo Final e conferi que os valores batem.</label>
+      </div>
+      <fieldset class="quiz" id="q5" data-correct="1">
+        <legend>Confira o que aprendeu</legend>
+        <span class="stamp stamp-ok">confere</span>
+        <span class="stamp stamp-bad">revisar</span>
+        <div>Um produto tem estoque inicial 80, entradas somando 0 e saídas somando 30. Qual é o saldo final?</div>
+        <label class="quiz-option"><input type="radio" name="q5" value="0"> 110</label>
+        <label class="quiz-option"><input type="radio" name="q5" value="1"> 50</label>
+        <label class="quiz-option"><input type="radio" name="q5" value="2"> 80</label>
+        <label class="quiz-option"><input type="radio" name="q5" value="3"> 30</label>
+        <button type="button" class="confirm-btn">Confirmar resposta</button>
+        <div class="quiz-msg"></div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- STEP 7 -->
+  <section data-step="7">
+    <div class="panel">
+      <span class="tag-label">Entrega</span>
+      <h2>Fechando o estoque</h2>
+      <p>Sua planilha de controle de estoque está pronta. Antes de entregar:</p>
+      <ol>
+        <li>Confira as duas abas: teste adicionando uma movimentação nova na aba Movimento e veja se o Saldo Final, na aba Estoque, muda sozinho.</li>
+        <li>Compartilhe sua planilha (botão Compartilhar, no canto superior direito) e anexe o link na atividade do Classroom.</li>
+        <li>Gere o comprovante abaixo e anexe esse arquivo junto com a planilha.</li>
+      </ol>
+      <div class="score-line" id="score-line"></div>
+      <button type="button" class="confirm-btn" id="gen-btn">Gerar comprovante</button>
+      <div id="save-status" class="save-status"></div>
+      <textarea class="fallback" id="fallback-area" style="display:none" readonly></textarea>
+    </div>
+  </section>
+
+  <div class="nav-row">
+    <button type="button" class="nav-btn" id="btn-home">Início</button>
+    <button type="button" class="nav-btn" id="btn-prev">Passo anterior</button>
+    <div class="nav-spacer"></div>
+    <button type="button" class="nav-btn primary" id="btn-next">Próximo passo</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var STEP_LABELS = ['Capa','Abas','Estoque','Movimento','Entradas','Saídas','Saldo','Entrega'];
+  var STORAGE_KEY = 'estoque_roteiro_v1';
+  var LAST_STEP = 7;
+
+  var defaultState = {
+    step: 0,
+    nome: '', numero: '', turma: '',
+    checks: {1:false,2:false,3:false,4:false,5:false,6:false},
+    quiz: {}
+  };
+
+  function loadState() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return JSON.parse(JSON.stringify(defaultState));
+      var parsed = JSON.parse(raw);
+      return Object.assign(JSON.parse(JSON.stringify(defaultState)), parsed);
+    } catch (e) {
+      return JSON.parse(JSON.stringify(defaultState));
+    }
+  }
+
+  function saveState() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* segue sem persistir */ }
+  }
+
+  var state = loadState();
+
+  var sections = Array.prototype.slice.call(document.querySelectorAll('[data-step]'));
+  var progressEl = document.getElementById('progress');
+  var btnHome = document.getElementById('btn-home');
+  var btnPrev = document.getElementById('btn-prev');
+  var btnNext = document.getElementById('btn-next');
+
+  function canAdvanceFrom(step) {
+    if (step === 0) return !!(state.nome.trim() && state.numero.trim() && state.turma.trim());
+    if (step >= 1 && step <= 6) return !!state.checks[step];
+    return true;
+  }
+
+  function buildProgress() {
+    progressEl.innerHTML = '';
+    STEP_LABELS.forEach(function (label, i) {
+      var stub = document.createElement('div');
+      stub.className = 'progress-stub';
+      stub.textContent = label;
+      stub.dataset.step = i;
+      progressEl.appendChild(stub);
+    });
+  }
+
+  function renderProgress() {
+    Array.prototype.forEach.call(progressEl.children, function (stub) {
+      var i = +stub.dataset.step;
+      stub.classList.toggle('is-current', i === state.step);
+      stub.classList.toggle('is-done', i < state.step);
+    });
+  }
+
+  function renderNav() {
+    btnHome.disabled = state.step === 0;
+    btnPrev.disabled = state.step === 0;
+    if (state.step === LAST_STEP) {
+      btnNext.style.display = 'none';
+    } else {
+      btnNext.style.display = '';
+      btnNext.disabled = !canAdvanceFrom(state.step);
+    }
+  }
+
+  function renderSections() {
+    sections.forEach(function (sec) {
+      sec.classList.toggle('is-active', +sec.dataset.step === state.step);
+    });
+  }
+
+  function render() {
+    renderProgress();
+    renderNav();
+    renderSections();
+  }
+
+  btnHome.addEventListener('click', function () {
+    if (state.step > 0) { state.step = 0; saveState(); render(); window.scrollTo(0,0); }
+  });
+  btnPrev.addEventListener('click', function () {
+    if (state.step > 0) { state.step -= 1; saveState(); render(); window.scrollTo(0,0); }
+  });
+  btnNext.addEventListener('click', function () {
+    if (canAdvanceFrom(state.step) && state.step < LAST_STEP) {
+      state.step += 1; saveState(); render(); window.scrollTo(0,0);
+    }
+  });
+
+  // Identificação
+  var fNome = document.getElementById('f-nome');
+  var fNumero = document.getElementById('f-numero');
+  var fTurma = document.getElementById('f-turma');
+  var hintNome = document.getElementById('hint-nome');
+  var hintNumero = document.getElementById('hint-numero');
+  var LETTERS_RE = /[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g;
+  var DIGITS_RE = /[^0-9]/g;
+
+  fNome.value = state.nome; fNumero.value = state.numero; fTurma.value = state.turma;
+
+  fNome.addEventListener('input', function () {
+    var clean = fNome.value.replace(LETTERS_RE, '');
+    hintNome.textContent = (clean !== fNome.value) ? 'Use apenas letras e espaços.' : '';
+    fNome.value = clean;
+    state.nome = clean;
+    saveState();
+    renderNav();
+  });
+
+  fNumero.addEventListener('input', function () {
+    var clean = fNumero.value.replace(DIGITS_RE, '');
+    hintNumero.textContent = (clean !== fNumero.value) ? 'Use apenas números.' : '';
+    fNumero.value = clean;
+    state.numero = clean;
+    saveState();
+    renderNav();
+  });
+
+  ['input', 'change'].forEach(function (evt) {
+    fTurma.addEventListener(evt, function () {
+      state.turma = fTurma.value;
+      saveState();
+      renderNav();
+    });
+  });
+
+  // Checkboxes de etapa
+  [1,2,3,4,5,6].forEach(function (n) {
+    var el = document.getElementById('chk-' + n);
+    el.checked = !!state.checks[n];
+    el.addEventListener('change', function () {
+      state.checks[n] = el.checked;
+      saveState();
+      renderNav();
+    });
+  });
+
+  // Quizzes
+  function lockQuiz(fieldset, selectedVal, correctVal) {
+    var radios = fieldset.querySelectorAll('input[type=radio]');
+    radios.forEach(function (r) { r.disabled = true; });
+    var options = fieldset.querySelectorAll('.quiz-option');
+    options.forEach(function (opt) {
+      var val = +opt.querySelector('input').value;
+      if (val === correctVal) opt.classList.add('is-correct');
+      if (val === selectedVal && selectedVal !== correctVal) opt.classList.add('is-wrong');
+    });
+    var btn = fieldset.querySelector('.confirm-btn');
+    btn.style.display = 'none';
+    var msg = fieldset.querySelector('.quiz-msg');
+    msg.classList.remove('quiz-warn');
+    msg.classList.add('show');
+    msg.textContent = (selectedVal === correctVal)
+      ? 'Correto.'
+      : 'Não foi dessa vez — a alternativa certa está marcada acima.';
+    fieldset.classList.add('is-answered');
+    var stampOk = fieldset.querySelector('.stamp-ok');
+    var stampBad = fieldset.querySelector('.stamp-bad');
+    if (selectedVal === correctVal) { stampOk.style.display = 'inline-block'; }
+    else { stampBad.style.display = 'inline-block'; }
+  }
+
+  document.querySelectorAll('fieldset.quiz').forEach(function (fieldset) {
+    var qid = fieldset.id;
+    var correct = +fieldset.dataset.correct;
+    var saved = state.quiz[qid];
+    if (saved) {
+      lockQuiz(fieldset, saved.selected, correct);
+      var savedRadio = fieldset.querySelector('input[value="' + saved.selected + '"]');
+      if (savedRadio) savedRadio.checked = true;
+    }
+    var btn = fieldset.querySelector('.confirm-btn');
+    var msg = fieldset.querySelector('.quiz-msg');
+    btn.addEventListener('click', function () {
+      var checked = fieldset.querySelector('input[type=radio]:checked');
+      if (!checked) {
+        msg.classList.add('show', 'quiz-warn');
+        msg.textContent = 'Selecione uma alternativa antes de confirmar.';
+        return;
+      }
+      var val = +checked.value;
+      state.quiz[qid] = { selected: val, correct: val === correct };
+      saveState();
+      lockQuiz(fieldset, val, correct);
+    });
+  });
+
+  // Entrega / comprovante
+  var scoreLine = document.getElementById('score-line');
+  var genBtn = document.getElementById('gen-btn');
+  var saveStatus = document.getElementById('save-status');
+  var fallbackArea = document.getElementById('fallback-area');
+
+  function updateScoreLine() {
+    var ids = ['q1','q2','q3','q4','q5'];
+    var answered = ids.filter(function (id) { return state.quiz[id]; }).length;
+    var correct = ids.filter(function (id) { return state.quiz[id] && state.quiz[id].correct; }).length;
+    scoreLine.textContent = 'Questões respondidas: ' + answered + ' de ' + ids.length + ' — acertos: ' + correct + '.';
+  }
+  updateScoreLine();
+
+  function buildComprovante() {
+    var ids = ['q1','q2','q3','q4','q5'];
+    var respostas = {};
+    ids.forEach(function (id) {
+      respostas[id] = state.quiz[id] ? state.quiz[id] : { selected: null, correct: false };
+    });
+    var acertos = ids.filter(function (id) { return respostas[id].correct; }).length;
+    return {
+      atividade: 'Controle de estoque no Google Planilhas',
+      nome: state.nome,
+      numero: state.numero,
+      turma: state.turma,
+      data_geracao: new Date().toISOString(),
+      etapas_concluidas: state.checks,
+      respostas: respostas,
+      acertos: acertos,
+      total_questoes: ids.length
+    };
+  }
+
+  genBtn.addEventListener('click', async function () {
+    var comprovante = buildComprovante();
+    var json = JSON.stringify(comprovante, null, 2);
+    var filenameBase = (state.nome || 'aluno').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    var filename = 'comprovante-estoque-' + (filenameBase || 'aluno') + '.json';
+
+    saveStatus.textContent = '';
+    saveStatus.className = 'save-status';
+
+    var downloads = null;
+    try {
+      if (window.claude && typeof window.claude.use === 'function') {
+        downloads = await window.claude.use('downloads');
+      }
+    } catch (e) { downloads = null; }
+
+    if (downloads) {
+      try {
+        await downloads.save({ filename: filename, data: json });
+        saveStatus.textContent = 'Comprovante salvo. Anexe o arquivo junto com sua planilha no Classroom.';
+        saveStatus.className = 'save-status ok';
+        fallbackArea.style.display = 'none';
+      } catch (err) {
+        saveStatus.textContent = 'Não foi possível salvar o arquivo automaticamente. Copie o conteúdo abaixo e salve como ' + filename + '.';
+        saveStatus.className = 'save-status err';
+        fallbackArea.style.display = 'block';
+        fallbackArea.value = json;
+      }
+    } else {
+      saveStatus.textContent = 'Download automático indisponível aqui. Copie o conteúdo abaixo e salve como ' + filename + '.';
+      saveStatus.className = 'save-status err';
+      fallbackArea.style.display = 'block';
+      fallbackArea.value = json;
+    }
+  });
+
+  buildProgress();
+  render();
+})();
+</script>
+</body>
+</html>
